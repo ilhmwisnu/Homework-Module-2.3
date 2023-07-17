@@ -15,46 +15,55 @@ app.listen(port, () => {
 });
 
 app.get("/", (req, res) => {
-  let songs;
-  let sort = req.query.sort;
-  if (req.query.sort === "most-played") {
-    songs = myPlayList.songs.sort((a, b) =>
-      a.play_count < b.play_count ? 1 : -1
-    )
-  } else {
-    songs = myPlayList.songs;
-  }
+  try {
+    let songs;
+    let sort = req.query.sort;
 
-  res.send({
-    message: `Successful get songs ${sort ?? ""}`,
-    data: songs,
-  });
+    if (sort === "most-played") {
+      songs = myPlayList.getSongs(true)
+    } else {
+      songs = myPlayList.getSongs(false);
+    }
+
+    res.send({
+      message: "Successful get songs",
+      data: songs,
+    });
+  } catch (error) {
+    res.send({
+      message: error.message,
+    });
+  }
 });
 
 app.get("/play/:id", (req, res) => {
-  let id = req.params.id;
-  let song = myPlayList.songs[id];
+  try {
+    let id = req.params.id;
+    let song = myPlayList.playSong(id);
 
-  if (!song) {
-    return res.status(404).send({
-      message: "Song not found",
+    if (!song) {
+      throw Error("Song not found");
+    }
+
+    res.send({
+      message: "Successful get song",
+      data: song,
+    });
+  } catch (error) {
+    res.send({
+      message: error.message,
     });
   }
-
-  myPlayList.songs[id].play_count += 1;
-
-  res.send({
-    message: "Successful get song",
-    data: song,
-  });
 });
 
 app.post("/", (req, res) => {
-  let body = req.body;
-  let newSong = new Song(body.title, body.artists, body.url);
-  myPlayList.songs.push(newSong);
+  try {
+    let body = req.body;
+    let newSong = new Song(body.title, body.artists, body.url);
+    myPlayList.addSong(newSong);
 
-  res.send({
-    message: "Song has been added",
-  });
+    res.send({ message: "Song has been added" });
+  } catch (error) {
+    res.status(400).send({ message: error.message });
+  }
 });
